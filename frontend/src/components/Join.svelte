@@ -1,10 +1,12 @@
 <script>
     import { gameState } from '../store.js';
     import { navigate } from "svelte-routing";
+
+    gameState.reset();
     
     let enteredCode = "";
     let error = null;
-
+    
     gameState.subscribe(state => {
         switch(state.status) {
             case 'game-ready':

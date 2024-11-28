@@ -1,7 +1,7 @@
 import "dotenv/config"
 import { WebSocketServer } from "ws";
 import { v4 as uuidv4 } from "uuid";
-const PORT = process.env.PORT || 8081;
+const PORT = process.env.PORT || 8088;
 const HOST = process.env.HOST || 'localhost';
 const server = new WebSocketServer({ host: HOST, port: PORT });
 
@@ -103,7 +103,7 @@ function handlePlayerChoice(data) {
         room.choices = {};
         room.currentRound++;
 
-        if (room.currentRound > room.rounds) {
+        if (room.currentRound >= room.rounds) {
             const winner = determineWinner(room.scores);
 
             room.host.send(JSON.stringify({ type: "gameOver", winner }));
@@ -142,9 +142,9 @@ function resolveRound(room) {
 }
 
 function determineWinner(scores) {
-    if (scores.host > scores.joiner) return "Host";
-    if (scores.host < scores.joiner) return "Joiner";
-    return "Tie";
+    if (scores.host > scores.joiner) return "host";
+    if (scores.host < scores.joiner) return "joiner";
+    return "breakeven";
 }
 
 function handleDisconnect(socket) {

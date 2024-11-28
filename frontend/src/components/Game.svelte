@@ -1,36 +1,42 @@
 <script>
     import { gameState } from '../store.js';
+    import { navigate } from "svelte-routing";
 
-    let gameStat = null;
-    let roomCode = "";
-    let player = "";
-    let played = false;
+    let roomCode = null;
+    let currState = gameState;
+    let currPlayer = null;
+    let disableChoice = false;
+    let error = null;
 
     gameState.subscribe(state => {
-        gameStat = state;
-        player = state.player;
-        roomCode = state.roomCode;
-        if(gameStat.status === 'round-complete'){
-            played = false;
+        if(state.status === 'disconnected'){
+            navigate('/');
+            return
         }
-        console.table(state);
+        if(state.status === 'error'){
+            error = state.error;
+        }
+        currState = state;
+        currPlayer = state.player;
+        roomCode = state.roomCode;
+        if(state.status === 'game-ready' || state.status === 'round-complete'){
+            disableChoice = false;
+        }
     });
 
     function makeChoice(choice) {
-        played = true;
-        gameState.submitChoice(roomCode, player, choice);
+        disableChoice = true;
+        gameState.submitChoice(roomCode, currPlayer, choice);
     }
 
-    function renderGameState() {
-        switch (gameStat.status) {
-            case 'game-ready':
-                return "Game is ready. Make your choice!";
+    function rendercurrState() {
+        switch (currState.status) {
             case 'round-complete':
-                return `Last round result: Host scored ${gameStat.hostPoints}, Joiner scored ${gameStat.joinerPoints}`;
+                return `Last round result: Host scored ${currState.hostPoints}, Joiner scored ${currState.joinerPoints}`;
             case 'game-over':
-                return `Game Over! Winner: ${gameStat.winner}`;
+                return `Game Over! Winner: ${currState.winner}`;
             default:
-                return "Waiting for game to start...";
+                return "Make your move!";
         }
     }
 </script>
@@ -38,35 +44,41 @@
 <div class="game-container">
     <h2>Prisoner's Dilemma</h2>
     
-    <p>{renderGameState()}</p>
-    {#if gameStat.status === 'round-complete' || gameStat.status === 'game-over'}
-        <div class="game-stats">
-            <p>Current Scores:</p>
-            <p>Host: {gameStat.scores?.host || 0}</p>
-            <p>Joiner: {gameStat.scores?.joiner || 0}</p>
-            
-            {#if gameStat.status === 'game-over'}
-                <h3>Final Winner: {gameStat.winner}</h3>
-            {/if}
+    {#if !error}
+        <p>{rendercurrState()}</p>
+        {#if currState.status === 'round-complete' || currState.status === 'game-over'}
+            <div class="game-stats">
+                <p>Current Scores:</p>
+                <p>You: {currPlayer === 'host' ? currState.scores?.host : currState.scores?.joiner}</p>
+                <p>Other: {currPlayer === 'host' ? currState.scores?.joiner : currState.scores?.host}</p>
+                
+                {#if currState.status === 'game-over'}
+                    <h3>{currState.winner === 'breakeven' ? `it's a breakeven.` : currState.winner === currPlayer ? `Winner.` : `Loser.`}</h3>
+                {/if}
+            </div>
+        {/if}
+        {#if currState.status != 'game-over'}
+        <div class="choices">
+            <div class="player-choices">
+                <h3>Your Choices</h3>
+                <button 
+                    on:click={() => makeChoice('c')} 
+                    disabled={disableChoice}
+                >
+                    Collaborate (C)
+                </button>
+                <button 
+                    on:click={() => makeChoice('r')} 
+                    disabled={disableChoice}
+                >
+                    Retaliate (R)
+                </button>
+            </div>
         </div>
+        {/if}
+    {:else}
+        <p class="error">{error}</p>
     {/if}
-    <div class="choices">
-        <div class="player-choices">
-            <h3>Your Choices</h3>
-            <button 
-                on:click={() => makeChoice('c')} 
-                disabled={played}
-            >
-                Collaborate (C)
-            </button>
-            <button 
-                on:click={() => makeChoice('r')} 
-                disabled={played}
-            >
-                Retaliate (R)
-            </button>
-        </div>
-    </div>
 </div>
 
 <style>

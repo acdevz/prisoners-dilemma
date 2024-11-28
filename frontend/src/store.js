@@ -1,14 +1,14 @@
 import { writable } from "svelte/store";
 
 function createWebSocketStore() {
-  const { subscribe, set, update } = writable({
+  const { subscribe, update } = writable({
     status: 'disconnected',
     error: null
   });
   let socket = null;
 
   function connect() {
-    const PORT = 8081;
+    const PORT = 8088;
     const HOST = '192.168.1.18'
     socket = new WebSocket(`ws://${HOST}:${PORT}`);
 
@@ -68,7 +68,7 @@ function createWebSocketStore() {
 
     socket.onclose = () => {
       update(state => ({ ...state, status: 'disconnected' }));
-      setTimeout(connect, 3000);
+      setTimeout(() => connect(), 3000);
     };
 
     socket.onerror = (error) => {
@@ -103,6 +103,13 @@ function createWebSocketStore() {
     });
   }
 
+  function reset(){
+    update(() => ({
+      status: 'connected',
+      error: null,
+    }))
+  }
+
   connect();
 
   return {
@@ -110,6 +117,7 @@ function createWebSocketStore() {
     createRoom,
     joinRoom,
     submitChoice,
+    reset,
     send
   };
 }

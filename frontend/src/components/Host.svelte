@@ -2,6 +2,8 @@
     import { gameState } from '../store.js';
     import { navigate } from "svelte-routing";
 
+    gameState.reset();
+    
     let rounds = 5;
     let roomCode = '';
     let error = null;
